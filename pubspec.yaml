@@ -37,6 +37,8 @@ dependencies:
   cupertino_icons: ^1.0.2
   google_fonts: ^6.2.0
   flutter_secure_storage: ^9.2.2
+  url_launcher: ^6.2.4
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
@@ -76,14 +78,14 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  fonts:
-    - family: Poppins
-      fonts:
-        - asset: fonts/Poppins-Regular.ttf
-        - asset: fonts/Poppins-Bold.ttf
-          weight: 700
-        - asset: fonts/Poppins-Italic.ttf
-          style: italic
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: fonts/Poppins-Regular.ttf
+  #       - asset: fonts/Poppins-Bold.ttf
+  #         weight: 700
+  #       - asset: fonts/Poppins-Italic.ttf
+  #         style: italic
 
   #
   # For details regarding fonts from package dependencies,

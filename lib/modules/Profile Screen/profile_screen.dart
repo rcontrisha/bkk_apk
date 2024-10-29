@@ -30,6 +30,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading =
             false; // Set loading ke false setelah data berhasil diambil
       });
+      print(_alumniData);
     } catch (e) {
       print('Error: $e');
       setState(() {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:bkk/services/api_services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 class JobScreen extends StatefulWidget {
@@ -12,11 +13,27 @@ class JobScreen extends StatefulWidget {
 class _JobScreenState extends State<JobScreen> {
   final ApiServices _apiServices = ApiServices();
   late Future<List<dynamic>> _lowonganFuture;
+  final Set<int> _bookmarkedJobIds = {};
 
   @override
   void initState() {
     super.initState();
+    _loadBookmarkedJobs();
     _lowonganFuture = _apiServices.fetchLowongan();
+  }
+
+  Future<void> _loadBookmarkedJobs() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _bookmarkedJobIds
+          .addAll((prefs.getStringList('bookmarkedJobs') ?? []).map(int.parse));
+    });
+  }
+
+  Future<void> _saveBookmarkedJobs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('bookmarkedJobs',
+        _bookmarkedJobIds.map((id) => id.toString()).toList());
   }
 
   @override
@@ -113,6 +130,8 @@ class _JobScreenState extends State<JobScreen> {
       requirements = ['Persyaratan tidak tersedia.'];
     }
 
+    bool isBookmarked = _bookmarkedJobIds.contains(job['id']);
+
     return GestureDetector(
       onTap: () {
         // Mengirim data job ke halaman InsideJob
@@ -144,30 +163,52 @@ class _JobScreenState extends State<JobScreen> {
                     ],
                   ),
                   IconButton(
-                    icon: const Icon(Icons.bookmark_border),
-                    onPressed: () {
-                      // TODO: Implement bookmark functionality
+                    icon: Icon(
+                      isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+                      color: Colors.amber[400],
+                      size: 35,
+                    ),
+                    onPressed: () async {
+                      // Implement bookmark functionality
+                      try {
+                        if (isBookmarked) {
+                          // Remove bookmark
+                          await _apiServices.deleteBookmark(job['id']);
+                          _bookmarkedJobIds.remove(job['id']);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                                content:
+                                    Text('Lowongan dihapus dari bookmark!')),
+                          );
+                        } else {
+                          // Add bookmark
+                          await _apiServices.bookmarkJob(
+                              job['id']); // Use job['id'] for the bookmark
+                          _bookmarkedJobIds.add(job['id']);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Lowongan disimpan!')),
+                          );
+                        }
+                        await _saveBookmarkedJobs(); // Simpan status bookmark ke SharedPreferences
+                        setState(() {}); // Refresh UI
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Gagal menyimpan: $e')),
+                        );
+                      }
                     },
                   ),
                 ],
               ),
               const SizedBox(height: 8),
-              const Text(
-                'Deskripsi:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              const Text('Deskripsi:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               Text(job['deskripsi'] ?? 'Tidak ada deskripsi.'),
               const SizedBox(height: 8),
-              const Text(
-                'Persyaratan Teknis:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              const Text('Persyaratan Teknis:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               ...requirements.map((req) => Text('• $req')).toList(),
               const SizedBox(height: 8),
-              Text(
-                'Dibuat pada: ${job['created_at']?.substring(0, 10) ?? 'Tanggal tidak tersedia'}',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
             ],
           ),
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:url_launcher/url_launcher.dart';
 
 class InsideJobScreen extends StatelessWidget {
   final Map<String, dynamic> job;
@@ -9,11 +10,14 @@ class InsideJobScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Mengambil data dari job
+    final String photo =
+        "http://192.168.1.20:8000/uploads/lowongan/${job['photo']}";
     final String title = job['judul'] ?? 'Posisi tidak tersedia';
     final String company = job['perusahaan'] ?? 'Perusahaan tidak tersedia';
     final String location = job['lokasi'] ?? 'Lokasi tidak tersedia';
     final String category = job['kategori'] ?? 'Kategori tidak tersedia';
     final String type = job['tipe'] ?? 'Tipe tidak tersedia';
+    final String link = job['link_lamaran'] ?? 'Link tidak tersedia';
     final String salary = job['gaji'] != null
         ? 'Rp ${job['gaji']?.replaceAll('.', ',') ?? 'Gaji tidak tersedia'} per month'
         : 'Gaji tidak tersedia';
@@ -35,12 +39,20 @@ class InsideJobScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
+              width: double.infinity,
               height: 200,
               color: Colors.grey[300],
-              child: const Center(
-                child: Text(
-                    'Company Logo Placeholder'), // Ganti dengan widget image jika ada
-              ),
+              child: photo != null
+                  ? Image.network(
+                      photo, // Replace 'photo' with the URL of the image
+                      fit: BoxFit.fill,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const Center(child: Text('Image not available'));
+                      },
+                    )
+                  : const Center(
+                      child: Text('No image available'),
+                    ),
             ),
             Padding(
               padding: const EdgeInsets.all(16),
@@ -108,17 +120,23 @@ class InsideJobScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: Padding(
-        padding: const EdgeInsets.all(16),
-        child: ElevatedButton(
-          onPressed: () {
-            // TODO: Implement apply functionality
-          },
-          child: const Text('Liat Lamaran'),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-        ),
-      ),
+          padding: const EdgeInsets.all(16),
+          child: ElevatedButton(
+            onPressed: () async {
+              launcher(link);
+            },
+            child: const Text('Liat Lamaran'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          )),
     );
+  }
+
+  Future<void> launcher(String url) async {
+    final Uri _url = Uri.parse(url.startsWith('http') ? url : 'https://$url');
+    if (!await launchUrl(_url)) {
+      throw Exception("Failed to launch URL: $_url");
+    }
   }
 }

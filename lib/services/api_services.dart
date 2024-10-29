@@ -3,8 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiServices {
-  final String baseUrl =
-      'http://192.168.1.20:8000/api'; // Ganti dengan URL API Anda
+  final String baseUrl = 'http://192.168.1.20:8000/api'; // Ganti dengan URL API Anda
   final FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
   // Fungsi untuk login
@@ -21,13 +20,10 @@ class ApiServices {
     );
 
     if (response.statusCode == 200) {
-      // Jika server mengembalikan respons OK
       final Map<String, dynamic> data = jsonDecode(response.body);
-      // Simpan token di penyimpanan aman
       await secureStorage.write(key: 'token', value: data['token']);
       return data; // Mengembalikan data pengguna dan token
     } else {
-      // Jika server mengembalikan respons error
       throw Exception('Failed to log in');
     }
   }
@@ -58,7 +54,7 @@ class ApiServices {
     }
   }
 
-  // Fungsi untuk mendapatkan daftar lowongan
+  // Fungsi untuk mendapatkan detail lowongan
   Future<Map<String, dynamic>> fetchDetailLowongan(int id) async {
     try {
       final token = await secureStorage.read(key: 'token');
@@ -73,10 +69,8 @@ class ApiServices {
       );
 
       if (response.statusCode == 200) {
-        // Jika server mengembalikan 200 OK, maka parse JSON
         return json.decode(response.body);
       } else {
-        // Jika server tidak mengembalikan 200 OK, lempar pengecualian
         throw Exception('Gagal memuat detail lowongan: ${response.statusCode}');
       }
     } catch (e) {
@@ -92,13 +86,13 @@ class ApiServices {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': 'Bearer $token', // Jika menggunakan token untuk autentikasi
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode(alumniData),
     );
 
     if (response.statusCode == 201) {
-      return jsonDecode(response.body); // Data berhasil disimpan
+      return jsonDecode(response.body);
     } else {
       throw Exception('Gagal menyimpan data alumni: ${response.body}');
     }
@@ -107,20 +101,82 @@ class ApiServices {
   // Method untuk mengambil data alumni berdasarkan ID
   Future<Map<String, dynamic>> getAlumniById() async {
     final token = await secureStorage.read(key: 'token');
-    
+
     final response = await http.get(
       Uri.parse('$baseUrl/data-alumni'), // Endpoint untuk mendapatkan data alumni
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'Authorization': 'Bearer $token', // Jika menggunakan token untuk autentikasi
+        'Authorization': 'Bearer $token',
       },
     );
 
     if (response.statusCode == 200) {
-      return jsonDecode(response.body); // Mengembalikan data alumni
+      return jsonDecode(response.body);
     } else {
       throw Exception('Gagal mendapatkan data alumni: ${response.body}');
+    }
+  }
+
+  // Fungsi untuk menyimpan bookmark
+  Future<void> bookmarkJob(int jobId) async {
+    final token = await secureStorage.read(key: 'token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/bookmarks'), // Ganti dengan endpoint untuk menyimpan bookmark
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'job_id': jobId}),
+    );
+
+    if (response.statusCode != 201) {
+      throw Exception('Gagal menyimpan bookmark: ${response.body}');
+    }
+  }
+
+  // Fungsi untuk mengambil semua bookmark
+  Future<List<dynamic>> fetchBookmarks() async {
+    try {
+      final token = await secureStorage.read(key: 'token');
+
+      final response = await http.get(
+        Uri.parse('$baseUrl/bookmarks'), // Ganti dengan endpoint untuk mengambil bookmark
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        return responseData['data'];
+      } else {
+        throw Exception('Gagal memuat bookmark');
+      }
+    } catch (e) {
+      print('Terjadi kesalahan: $e');
+      return [];
+    }
+  }
+
+  // Fungsi untuk menghapus bookmark
+  Future<void> deleteBookmark(int bookmarkId) async {
+    final token = await secureStorage.read(key: 'token');
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/bookmarks/$bookmarkId'), // Ganti dengan endpoint untuk menghapus bookmark
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal menghapus bookmark: ${response.body}');
     }
   }
 }
