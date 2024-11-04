@@ -11,7 +11,7 @@ class InsideJobScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Mengambil data dari job
     final String photo =
-        "http://192.168.1.20:8000/uploads/lowongan/${job['photo']}";
+        "http://192.168.1.18:8000/uploads/lowongan/${job['photo']}";
     final String title = job['judul'] ?? 'Posisi tidak tersedia';
     final String company = job['perusahaan'] ?? 'Perusahaan tidak tersedia';
     final String location = job['lokasi'] ?? 'Lokasi tidak tersedia';

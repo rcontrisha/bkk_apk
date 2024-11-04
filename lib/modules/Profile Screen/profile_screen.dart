@@ -1,6 +1,7 @@
 import 'package:bkk/modules/Login%20Screen/login_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:bkk/services/api_services.dart'; // Pastikan ini diimpor untuk menggunakan layanan API
+import 'package:bkk/services/api_services.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // Pastikan ini diimpor untuk menggunakan layanan API
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -10,7 +11,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final baseUrl = 'http://192.168.1.20:8000/uploads/profile_photos/';
+  final baseUrl = 'http://192.168.1.18:8000/uploads/profile_photos/';
   final ApiServices _apiService = ApiServices();
   Map<String, dynamic>? _alumniData; // Menyimpan data alumni
   bool _isLoading = true; // Menandakan apakah data sedang dimuat
@@ -113,7 +114,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: 24),
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs
+                            .clear(); // Menghapus semua data dari SharedPreferences
+
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(

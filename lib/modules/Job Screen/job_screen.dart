@@ -18,16 +18,29 @@ class _JobScreenState extends State<JobScreen> {
   @override
   void initState() {
     super.initState();
-    _loadBookmarkedJobs();
+    _loadBookmarkedJobs(); // Load bookmarked jobs from API
     _lowonganFuture = _apiServices.fetchLowongan();
   }
 
   Future<void> _loadBookmarkedJobs() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      _bookmarkedJobIds
-          .addAll((prefs.getStringList('bookmarkedJobs') ?? []).map(int.parse));
-    });
+
+    // Fetch bookmarks from API
+    try {
+      final bookmarkedJobs = await _apiServices.fetchBookmarks();
+
+      if (bookmarkedJobs != null) {
+        setState(() {
+          // Tambahkan job_id ke dalam _bookmarkedJobIds
+          _bookmarkedJobIds.addAll(
+              bookmarkedJobs.map((bookmark) => bookmark['job_id'] as int));
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memuat data bookmark: $e')),
+      );
+    }
   }
 
   Future<void> _saveBookmarkedJobs() async {

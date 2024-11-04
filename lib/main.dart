@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
+        '/register': (context) => RegisterScreen(),
         '/job': (context) => const JobScreen(),
         '/insideJob': (context) => InsideJobScreen(
           job: ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>,

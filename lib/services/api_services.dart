@@ -1,15 +1,46 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiServices {
-  final String baseUrl = 'http://192.168.1.20:8000/api'; // Ganti dengan URL API Anda
+  final String baseUrl =
+      'http://192.168.1.18:8000/api'; // Ganti dengan URL API Anda
   final FlutterSecureStorage secureStorage = FlutterSecureStorage();
+
+  // Fungsi untuk registrasi
+  Future<Map<String, dynamic>> register(String name, String email,
+      String password, String passwordConfirmation) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/register'), // Endpoint untuk registrasi
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      body: jsonEncode({
+        'name': name,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      // Simpan token ke storage jika respons API menyediakan token setelah registrasi
+      if (data.containsKey('token')) {
+        await secureStorage.write(key: 'token', value: data['token']);
+      }
+      return data; // Mengembalikan data pengguna yang terdaftar
+    } else {
+      throw Exception('Failed to register: ${response.body}');
+    }
+  }
 
   // Fungsi untuk login
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/login'), // Ganti dengan endpoint login Anda
+      Uri.parse('$baseUrl/login'), // Adjust to your login endpoint
       headers: {
         'Content-Type': 'application/json',
       },
@@ -21,8 +52,15 @@ class ApiServices {
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
+
+      // Save the token in secure storage
       await secureStorage.write(key: 'token', value: data['token']);
-      return data; // Mengembalikan data pengguna dan token
+
+      // Save the user_id in SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('user_id', data['user_id'].toString());
+
+      return data; // Return user data and token
     } else {
       throw Exception('Failed to log in');
     }
@@ -79,7 +117,8 @@ class ApiServices {
     }
   }
 
-  Future<Map<String, dynamic>> storeAlumni(Map<String, dynamic> alumniData) async {
+  Future<Map<String, dynamic>> storeAlumni(
+      Map<String, dynamic> alumniData) async {
     final token = await secureStorage.read(key: 'token');
     final response = await http.post(
       Uri.parse('$baseUrl/alumni'), // Endpoint untuk menyimpan data alumni
@@ -103,7 +142,8 @@ class ApiServices {
     final token = await secureStorage.read(key: 'token');
 
     final response = await http.get(
-      Uri.parse('$baseUrl/data-alumni'), // Endpoint untuk mendapatkan data alumni
+      Uri.parse(
+          '$baseUrl/data-alumni'), // Endpoint untuk mendapatkan data alumni
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -122,7 +162,8 @@ class ApiServices {
   Future<void> bookmarkJob(int jobId) async {
     final token = await secureStorage.read(key: 'token');
     final response = await http.post(
-      Uri.parse('$baseUrl/bookmarks'), // Ganti dengan endpoint untuk menyimpan bookmark
+      Uri.parse(
+          '$baseUrl/bookmarks'), // Ganti dengan endpoint untuk menyimpan bookmark
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -142,7 +183,8 @@ class ApiServices {
       final token = await secureStorage.read(key: 'token');
 
       final response = await http.get(
-        Uri.parse('$baseUrl/bookmarks'), // Ganti dengan endpoint untuk mengambil bookmark
+        Uri.parse(
+            '$baseUrl/bookmarks'), // Ganti dengan endpoint untuk mengambil bookmark
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -152,13 +194,15 @@ class ApiServices {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
-        return responseData['data'];
+        print(responseData[
+            'bookmarks']); // Debugging untuk melihat struktur respons
+        return responseData['bookmarks']; // Ambil data dari 'bookmarks'
       } else {
         throw Exception('Gagal memuat bookmark');
       }
     } catch (e) {
       print('Terjadi kesalahan: $e');
-      return [];
+      return []; // Mengembalikan list kosong jika terjadi kesalahan
     }
   }
 
@@ -167,7 +211,8 @@ class ApiServices {
     final token = await secureStorage.read(key: 'token');
 
     final response = await http.delete(
-      Uri.parse('$baseUrl/bookmarks/$bookmarkId'), // Ganti dengan endpoint untuk menghapus bookmark
+      Uri.parse(
+          '$baseUrl/bookmarks/$bookmarkId'), // Ganti dengan endpoint untuk menghapus bookmark
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
