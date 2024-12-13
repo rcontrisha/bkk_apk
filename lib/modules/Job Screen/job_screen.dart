@@ -1,3 +1,4 @@
+import 'package:bkk/widgets/sidebar.dart';
 import 'package:flutter/material.dart';
 import 'package:bkk/services/api_services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -55,13 +56,8 @@ class _JobScreenState extends State<JobScreen> {
       appBar: AppBar(
         title: const Text('BKK SMN 19 JAKARTA'),
         centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(Icons.menu),
-          onPressed: () {
-            // TODO: Implement menu functionality
-          },
-        ),
       ),
+      drawer: const Sidebar(), // Include Sidebar here
       body: Column(
         children: [
           Padding(

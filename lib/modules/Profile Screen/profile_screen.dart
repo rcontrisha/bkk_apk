@@ -11,7 +11,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final baseUrl = 'http://192.168.1.18:8000/uploads/profile_photos/';
+  final baseUrl = 'http://192.168.1.46:8000/uploads/profile_photos/';
   final ApiServices _apiService = ApiServices();
   Map<String, dynamic>? _alumniData; // Menyimpan data alumni
   bool _isLoading = true; // Menandakan apakah data sedang dimuat

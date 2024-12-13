@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:bkk/services/api_services.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 class AlumniScreen extends StatefulWidget {
@@ -12,6 +16,7 @@ class _AlumniScreenState extends State<AlumniScreen> {
   String? _selectedKompetensi;
   String? _selectedSasaran;
   String? _selectedTahunLulus;
+  PlatformFile? _selectedCV;
 
   final TextEditingController _namaController = TextEditingController();
   final TextEditingController _nikController = TextEditingController();
@@ -29,6 +34,15 @@ class _AlumniScreenState extends State<AlumniScreen> {
     String noTelp = _noTelpController.text;
     String email = _emailController.text;
     String tempatSasaran = _tempatSasaranController.text;
+    if (_selectedCV == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Silakan unggah file CV terlebih dahulu'),
+        backgroundColor: Colors.red,
+      ));
+      return;
+    }
+
+    final cvFile = File(_selectedCV!.path!); // Pastikan path file tidak null
 
     // Membuat Map untuk data alumni
     Map<String, dynamic> alumniData = {
@@ -46,21 +60,54 @@ class _AlumniScreenState extends State<AlumniScreen> {
 
     try {
       // Kirim data ke API
-      final response = await _apiService.storeAlumni(alumniData);
+      final response = await _apiService.storeAlumni(alumniData, cvFile);
+
       // Tampilkan pesan berhasil
       print('Data berhasil disimpan: ${response['data']}');
-      // Anda bisa menampilkan dialog atau snackbar untuk memberi tahu pengguna
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Data berhasil disimpan!'),
         backgroundColor: Colors.green,
       ));
     } catch (e) {
-      // Tampilkan pesan error
+      // Variabel default untuk pesan error
+      String errorMessage = 'Gagal menyimpan data';
+
+      // Cek apakah error adalah Exception dengan JSON di dalamnya
+      if (e is Exception) {
+        final errorString = e.toString();
+        // Cek apakah mengandung JSON
+        if (errorString.contains('{') && errorString.contains('}')) {
+          final jsonStart = errorString.indexOf('{');
+          final jsonString = errorString.substring(jsonStart);
+          try {
+            // Parse JSON
+            final parsedError = jsonDecode(jsonString);
+            errorMessage = parsedError['message'] ?? errorMessage;
+          } catch (parseError) {
+            print('Error parsing response: $parseError');
+          }
+        }
+      }
+
+      // Tampilkan pesan error di SnackBar
       print('Error: $e');
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Gagal menyimpan data: $e'),
+        content: Text(errorMessage),
         backgroundColor: Colors.red,
       ));
+    }
+  }
+
+  Future<void> _pickCVFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx'],
+    );
+
+    if (result != null) {
+      setState(() {
+        _selectedCV = result.files.single;
+      });
     }
   }
 
@@ -145,6 +192,19 @@ class _AlumniScreenState extends State<AlumniScreen> {
                 _selectedKompetensi = null;
               });
             }),
+            const SizedBox(height: 8),
+            Card(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: ListTile(
+                title: Text(_selectedCV != null
+                    ? 'File: ${_selectedCV!.name}'
+                    : 'Belum ada file yang dipilih'),
+                trailing: ElevatedButton(
+                  onPressed: _pickCVFile,
+                  child: const Text('Pilih File'),
+                ),
+              ),
+            ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

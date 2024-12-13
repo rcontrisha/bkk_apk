@@ -1,6 +1,9 @@
-import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:bkk/services/api_services.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class InsideJobScreen extends StatelessWidget {
   final Map<String, dynamic> job;
@@ -11,7 +14,7 @@ class InsideJobScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Mengambil data dari job
     final String photo =
-        "http://192.168.1.18:8000/uploads/lowongan/${job['photo']}";
+        "http://192.168.1.46:8000/uploads/lowongan/${job['photo']}";
     final String title = job['judul'] ?? 'Posisi tidak tersedia';
     final String company = job['perusahaan'] ?? 'Perusahaan tidak tersedia';
     final String location = job['lokasi'] ?? 'Lokasi tidak tersedia';
@@ -24,6 +27,10 @@ class InsideJobScreen extends StatelessWidget {
     final String description = job['deskripsi'] ?? 'Deskripsi tidak tersedia.';
     final List<String> requirements =
         List<String>.from(json.decode(job['requirement'] ?? '[]'));
+
+    // Inisialisasi ApiService dan Flutter Secure Storage
+    final ApiServices apiService = ApiServices();
+    final FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
     return Scaffold(
       appBar: AppBar(
@@ -108,7 +115,7 @@ class InsideJobScreen extends StatelessWidget {
                   Text(description),
                   const SizedBox(height: 16),
                   const Text(
-                    'Persyaratan Teknis:',
+                    'Persyaratan Teknis: ',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
@@ -120,16 +127,61 @@ class InsideJobScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: Padding(
-          padding: const EdgeInsets.all(16),
-          child: ElevatedButton(
-            onPressed: () async {
-              launcher(link);
-            },
-            child: const Text('Liat Lamaran'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () async {
+                  // Lakukan pengecekan apakah link valid
+                  await launcher(link);
+                },
+                child: const Text('Lihat Lamaran'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
             ),
-          )),
+            const SizedBox(width: 8),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () async {
+                  // Ambil userId dari secureStorage atau auth
+                  final token = await secureStorage.read(key: 'token');
+                  if (token != null) {
+                    final prefs = await SharedPreferences.getInstance();
+                    final userId = prefs.getString('user_id');
+                    final lowonganId = job['id'];
+                    print("User ID: ${userId}; Job ID: ${lowonganId}");
+
+                    // Panggil API untuk menyimpan pendaftaran
+                    try {
+                      final response = await apiService.storeDaftarLowongan(
+                        lowonganId: lowonganId,
+                        userId: int.parse(userId!), // Convert ke int
+                      );
+
+                      // Tampilkan pesan sukses
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Data berhasil disimpan')),
+                      );
+                    } catch (e) {
+                      // Tampilkan pesan error
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Gagal menyimpan data')),
+                      );
+                    }
+                  }
+                },
+                child: const Text('Daftar Lowongan'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
