@@ -14,7 +14,7 @@ class InsideJobScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     // Mengambil data dari job
     final String photo =
-        "http://192.168.1.46:8000/uploads/lowongan/${job['photo']}";
+        "http://192.168.1.30:8000/uploads/lowongan/${job['photo']}";
     final String title = job['judul'] ?? 'Posisi tidak tersedia';
     final String company = job['perusahaan'] ?? 'Perusahaan tidak tersedia';
     final String location = job['lokasi'] ?? 'Lokasi tidak tersedia';
@@ -147,31 +147,32 @@ class InsideJobScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () async {
                   // Ambil userId dari secureStorage atau auth
-                  final token = await secureStorage.read(key: 'token');
-                  if (token != null) {
-                    final prefs = await SharedPreferences.getInstance();
-                    final userId = prefs.getString('user_id');
-                    final lowonganId = job['id'];
-                    print("User ID: ${userId}; Job ID: ${lowonganId}");
+                  // final token = await secureStorage.read(key: 'token');
+                  // if (token != null) {
+                  //   final prefs = await SharedPreferences.getInstance();
+                  //   final userId = prefs.getString('user_id');
+                  //   final lowonganId = job['id'];
+                  //   print("User ID: ${userId}; Job ID: ${lowonganId}");
 
-                    // Panggil API untuk menyimpan pendaftaran
-                    try {
-                      final response = await apiService.storeDaftarLowongan(
-                        lowonganId: lowonganId,
-                        userId: int.parse(userId!), // Convert ke int
-                      );
+                  //   // Panggil API untuk menyimpan pendaftaran
+                  //   try {
+                  //     final response = await apiService.storeDaftarLowongan(
+                  //       lowonganId: lowonganId,
+                  //       userId: int.parse(userId!), // Convert ke int
+                  //     );
 
-                      // Tampilkan pesan sukses
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Data berhasil disimpan')),
-                      );
-                    } catch (e) {
-                      // Tampilkan pesan error
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Gagal menyimpan data')),
-                      );
-                    }
-                  }
+                  //     // Tampilkan pesan sukses
+                  //     ScaffoldMessenger.of(context).showSnackBar(
+                  //       SnackBar(content: Text('Data berhasil disimpan')),
+                  //     );
+                  //   } catch (e) {
+                  //     // Tampilkan pesan error
+                  //     ScaffoldMessenger.of(context).showSnackBar(
+                  //       SnackBar(content: Text('Gagal menyimpan data')),
+                  //     );
+                  //   }
+                  // }
+                  Navigator.pushNamed(context, '/applyJob');
                 },
                 child: const Text('Daftar Lowongan'),
                 style: ElevatedButton.styleFrom(

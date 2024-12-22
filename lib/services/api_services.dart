@@ -8,7 +8,7 @@ import 'dart:convert';
 
 class ApiServices {
   final String baseUrl =
-      'http://192.168.1.46:8000/api'; // Ganti dengan URL API Anda
+      'http://192.168.1.30:8000/api'; // Ganti dengan URL API Anda
   final FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
   // Fungsi untuk registrasi
@@ -177,38 +177,56 @@ class ApiServices {
 
   // Fungsi untuk menyimpan pendaftaran lowongan
   Future<Map<String, dynamic>> storeDaftarLowongan(
-      {required int lowonganId, required int userId}) async {
+      {required int lowonganId,
+      required String nama,
+      required String nisn,
+      required String noTelp,
+      required String email,
+      required File cvFile,
+      String? status}) async {
+    final uri = Uri.parse('$baseUrl/pendaftaran'); // Endpoint API
     final token = await secureStorage.read(key: 'token');
-    final url =
-        Uri.parse('$baseUrl/pendaftaran'); // Gantilah dengan URL API Anda
-    final headers = {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    final request = http.MultipartRequest('POST', uri)
+    ..headers.addAll({
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      });
 
-    // Data yang akan dikirim
-    final Map<String, dynamic> data = {
-      'lowongan_id': lowonganId,
-      'user_id': userId,
-    };
+    // Menambahkan field data
+    request.fields['lowongan_id'] = lowonganId.toString();
+    request.fields['nama'] = nama;
+    request.fields['nisn'] = nisn;
+    request.fields['no_telp'] = noTelp;
+    request.fields['email'] = email;
+
+    if (status != null) request.fields['status'] = status;
+
+    // Menambahkan file CV
+    final cvStream = http.ByteStream(cvFile.openRead());
+    final cvLength = await cvFile.length();
+    final multipartFile = http.MultipartFile(
+      'cv', // Nama field sesuai dengan API
+      cvStream,
+      cvLength,
+      filename: cvFile.path.split('/').last,
+    );
+
+    request.files.add(multipartFile);
 
     try {
-      final response = await http.post(
-        url,
-        headers: headers,
-        body: jsonEncode(data),
-      );
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 201) {
-        // Parsing response JSON jika status code 201
-        return jsonDecode(response.body);
+        // Jika berhasil
+        return json.decode(response.body) as Map<String, dynamic>;
       } else {
-        // Jika response gagal, lempar error dengan pesan
-        throw Exception('Gagal menyimpan data pendaftaran: ${response.body}');
+        // Jika gagal
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Terjadi kesalahan.');
       }
     } catch (e) {
-      throw Exception('Error: $e');
+      throw Exception('Gagal mengirim data: $e');
     }
   }
 
@@ -263,16 +281,18 @@ class ApiServices {
   // Fungsi untuk mendapatkan daftar pendaftaran berdasarkan user_id
   Future<List<dynamic>> getUserApplications() async {
     // Ambil token otentikasi dari penyimpanan
-      final token = await secureStorage.read(key: 'token');
+    final token = await secureStorage.read(key: 'token');
 
     if (token == null) {
       throw Exception('Token tidak ditemukan');
     }
 
     final response = await http.get(
-      Uri.parse('$baseUrl/pendaftaran-user'), // Ganti dengan endpoint yang sesuai
+      Uri.parse(
+          '$baseUrl/pendaftaran-user'), // Ganti dengan endpoint yang sesuai
       headers: {
-        'Authorization': 'Bearer $token', // Kirim token pada header untuk otentikasi
+        'Authorization':
+            'Bearer $token', // Kirim token pada header untuk otentikasi
         'Accept': 'application/json',
       },
     );

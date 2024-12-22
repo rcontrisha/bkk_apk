@@ -1,3 +1,4 @@
+import 'package:bkk/modules/Detail%20Job%20Screen/daftar_job_screen.dart';
 import 'package:bkk/modules/Profile%20Screen/profile_screen.dart';
 import 'package:bkk/modules/Register%20Screen/register_screen.dart';
 import 'package:bkk/modules/bookmarked_screen.dart';
@@ -37,6 +38,7 @@ class MyApp extends StatelessWidget {
               job: ModalRoute.of(context)!.settings.arguments
                   as Map<String, dynamic>,
             ),
+        '/applyJob': (context) => ApplyJobScreen(),
         '/alumni': (context) => const AlumniScreen(),
         '/profile': (context) => const ProfileScreen(),
         '/bookmarkedJobs': (context) => const BookmarkedJobsScreen(),
